@@ -2,33 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>StreamHub Pro</title>
+<title>StreamHub Ultimate</title>
 
 <style>
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #0b0b0f;
   color: white;
 }
 
-/* NAVBAR */
+/* NAV */
 header {
   display: flex;
   justify-content: space-between;
   padding: 15px 30px;
-  background: linear-gradient(to bottom, black, transparent);
-  position: fixed;
-  width: 100%;
-  z-index: 10;
+  background: black;
+  position: sticky;
+  top: 0;
 }
 
 .logo {
   color: #00ffe1;
   font-size: 24px;
-  font-weight: bold;
 }
 
+/* SEARCH */
 input {
   padding: 8px;
   border-radius: 6px;
@@ -37,100 +36,58 @@ input {
   color: white;
 }
 
-/* HERO */
-.hero {
-  height: 85vh;
-  background: url("https://images.unsplash.com/photo-1497032628192-86f99bcd76bc") center/cover;
-  display: flex;
-  align-items: flex-end;
-  padding: 40px;
-}
-
-.hero-content {
-  max-width: 500px;
-}
-
-.hero h1 {
-  font-size: 50px;
-}
-
-.hero button {
-  padding: 10px 20px;
-  background: #00ffe1;
-  border: none;
-  cursor: pointer;
-}
-
-/* SECTIONS */
-.section {
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
+  gap: 15px;
   padding: 20px;
 }
 
-.row {
-  display: flex;
-  overflow-x: auto;
-  gap: 12px;
-}
-
 .card {
-  position: relative;
-  min-width: 160px;
-  height: 230px;
-  border-radius: 10px;
-  overflow: hidden;
   cursor: pointer;
-}
-
-.card img, .card video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* hover video */
-.card video {
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0;
   transition: 0.3s;
-}
-
-.card:hover video {
-  opacity: 1;
 }
 
 .card:hover {
   transform: scale(1.1);
 }
 
-/* watchlist button */
-.save-btn {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  background: #00ffe1;
-  border: none;
-  padding: 5px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-/* MODAL */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
+.card img {
   width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.95);
-  justify-content: center;
-  align-items: center;
+  border-radius: 10px;
 }
 
-.modal video {
-  width: 75%;
+/* DETAIL PAGE */
+#detailPage {
+  display: none;
+  padding: 20px;
+}
+
+.detail-container {
+  display: flex;
+  gap: 20px;
+}
+
+.detail-container img {
+  width: 300px;
+  border-radius: 10px;
+}
+
+.buttons button {
+  margin: 10px 5px;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.watch {
+  background: #00ffe1;
+}
+
+.download {
+  background: red;
+  color: white;
 }
 </style>
 </head>
@@ -138,114 +95,103 @@ input {
 <body>
 
 <header>
-  <div class="logo">StreamHub Pro</div>
+  <div class="logo">StreamHub Ultimate</div>
   <input type="text" id="search" placeholder="Search movies...">
 </header>
 
-<div class="hero">
-  <div class="hero-content">
-    <h1>Featured Movie</h1>
-    <button onclick="playFeatured()">▶ Watch</button>
+<div id="homePage" class="grid"></div>
+
+<div id="detailPage">
+  <button onclick="goBack()">⬅ Back</button>
+
+  <div class="detail-container">
+    <img id="detailImg">
+    <div>
+      <h1 id="detailTitle"></h1>
+      <p id="detailDesc"></p>
+
+      <div class="buttons">
+        <button class="watch" onclick="playMovie()">▶ Watch</button>
+        <a id="downloadLink" download>
+          <button class="download">⬇ Download</button>
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 
-<div id="content"></div>
-
-<div class="modal" id="modal">
-  <video id="player" controls></video>
-</div>
+<video id="player" controls style="width:100%; display:none;"></video>
 
 <script>
-let watchlist = JSON.parse(localStorage.getItem("watchlist")) || [];
+const home = document.getElementById("homePage");
+const detailPage = document.getElementById("detailPage");
+const player = document.getElementById("player");
 
-const library = [
-  {
-    title: "Trending",
-    items: generateItems("T", 10)
-  },
-  {
-    title: "Action",
-    items: generateItems("A", 10)
-  },
-  {
-    title: "Anime",
-    items: generateItems("Anime", 10)
-  }
-];
+let movies = [];
 
-function generateItems(prefix, count) {
-  let arr = [];
-  for (let i = 1; i <= count; i++) {
-    arr.push({
-      name: prefix + " " + i,
-      img: `https://via.placeholder.com/160x230?text=${prefix}${i}`,
-      video: "https://www.w3schools.com/html/mov_bbb.mp4"
-    });
-  }
-  return arr;
-}
-
-const content = document.getElementById("content");
-
-function loadContent(data) {
-  content.innerHTML = "";
-
-  data.forEach(section => {
-    const div = document.createElement("div");
-    div.className = "section";
-
-    div.innerHTML = `
-      <h2>${section.title}</h2>
-      <div class="row">
-        ${section.items.map(item => `
-          <div class="card">
-            <img src="${item.img}">
-            <video muted loop src="${item.video}"></video>
-
-            <button class="save-btn" onclick="saveItem('${item.name}')">⭐</button>
-
-            <div onclick="openPlayer('${item.video}')" style="position:absolute;top:0;width:100%;height:100%;"></div>
-          </div>
-        `).join("")}
-      </div>
-    `;
-
-    content.appendChild(div);
+/* GENERATE 200+ MOVIES */
+for (let i = 1; i <= 200; i++) {
+  movies.push({
+    title: "Movie " + i,
+    img: `https://via.placeholder.com/300x450?text=Movie+${i}`,
+    video: "https://www.w3schools.com/html/mov_bbb.mp4",
+    desc: "This is a high-quality streaming movie. Enjoy cinematic visuals, action, and storytelling in Movie " + i + "."
   });
 }
 
-function openPlayer(src) {
-  document.getElementById("modal").style.display = "flex";
-  document.getElementById("player").src = src;
+function loadMovies(list) {
+  home.innerHTML = "";
+  list.forEach(movie => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <img src="${movie.img}">
+      <p>${movie.title}</p>
+    `;
+
+    div.onclick = () => openDetail(movie);
+    home.appendChild(div);
+  });
 }
 
-function playFeatured() {
-  openPlayer("https://www.w3schools.com/html/movie.mp4");
+function openDetail(movie) {
+  home.style.display = "none";
+  detailPage.style.display = "block";
+
+  document.getElementById("detailImg").src = movie.img;
+  document.getElementById("detailTitle").innerText = movie.title;
+  document.getElementById("detailDesc").innerText = movie.desc;
+
+  document.getElementById("downloadLink").href = movie.video;
+
+  currentMovie = movie;
 }
 
-function saveItem(name) {
-  if (!watchlist.includes(name)) {
-    watchlist.push(name);
-    localStorage.setItem("watchlist", JSON.stringify(watchlist));
-    alert("Saved to Watchlist ⭐");
-  }
+function goBack() {
+  detailPage.style.display = "none";
+  home.style.display = "grid";
+  player.style.display = "none";
+  player.pause();
+}
+
+let currentMovie = null;
+
+function playMovie() {
+  player.style.display = "block";
+  player.src = currentMovie.video;
 }
 
 /* SEARCH */
 document.getElementById("search").addEventListener("input", e => {
   const value = e.target.value.toLowerCase();
-
-  const filtered = library.map(section => ({
-    ...section,
-    items: section.items.filter(item =>
-      item.name.toLowerCase().includes(value)
-    )
-  })).filter(section => section.items.length > 0);
-
-  loadContent(filtered);
+  const filtered = movies.filter(m =>
+    m.title.toLowerCase().includes(value)
+  );
+  loadMovies(filtered);
 });
 
-loadContent(library);
+loadMovies(movies);
 </script>
 
 </body>
