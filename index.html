@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StreamFlix</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #141414;
+  color: white;
+}
+
+/* NAVBAR */
+header {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 30px;
+  background: black;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  color: red;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+input {
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+}
+
+/* HERO */
+.hero {
+  height: 70vh;
+  background: url("https://images.unsplash.com/photo-1524985069026-dd778a71c7b4") center/cover;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+}
+
+.hero h1 {
+  font-size: 50px;
+}
+
+.hero button {
+  padding: 10px 20px;
+  margin-top: 10px;
+  background: red;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+/* ROWS */
+.row {
+  margin: 20px;
+}
+
+.row h2 {
+  margin-bottom: 10px;
+}
+
+.row-posters {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+}
+
+.poster {
+  min-width: 150px;
+  height: 220px;
+  background-size: cover;
+  border-radius: 10px;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.poster:hover {
+  transform: scale(1.1);
+}
+
+/* VIDEO MODAL */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.9);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal video {
+  width: 70%;
+}
+
+.close {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  font-size: 30px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">STREAMFLIX</div>
+  <input type="text" id="search" placeholder="Search...">
+</header>
+
+<div class="hero">
+  <h1>Featured Movie</h1>
+  <p>Watch the latest trending content now.</p>
+  <button onclick="playVideo()">▶ Play</button>
+</div>
+
+<!-- ROWS -->
+<div id="content"></div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <span class="close" onclick="closeVideo()">✖</span>
+  <video id="videoPlayer" controls></video>
+</div>
+
+<script>
+const movies = [
+  {
+    title: "Action Hits",
+    items: [
+      { img: "https://via.placeholder.com/150x220?text=Movie+1", video: "https://www.w3schools.com/html/mov_bbb.mp4" },
+      { img: "https://via.placeholder.com/150x220?text=Movie+2", video: "https://www.w3schools.com/html/movie.mp4" },
+      { img: "https://via.placeholder.com/150x220?text=Movie+3", video: "https://www.w3schools.com/html/mov_bbb.mp4" }
+    ]
+  },
+  {
+    title: "Trending Now",
+    items: [
+      { img: "https://via.placeholder.com/150x220?text=Movie+4", video: "https://www.w3schools.com/html/movie.mp4" },
+      { img: "https://via.placeholder.com/150x220?text=Movie+5", video: "https://www.w3schools.com/html/mov_bbb.mp4" },
+      { img: "https://via.placeholder.com/150x220?text=Movie+6", video: "https://www.w3schools.com/html/movie.mp4" }
+    ]
+  },
+  {
+    title: "Anime Picks",
+    items: [
+      { img: "https://via.placeholder.com/150x220?text=Anime+1", video: "https://www.w3schools.com/html/mov_bbb.mp4" },
+      { img: "https://via.placeholder.com/150x220?text=Anime+2", video: "https://www.w3schools.com/html/movie.mp4" },
+      { img: "https://via.placeholder.com/150x220?text=Anime+3", video: "https://www.w3schools.com/html/mov_bbb.mp4" }
+    ]
+  }
+];
+
+const content = document.getElementById("content");
+
+function loadRows() {
+  movies.forEach(row => {
+    const rowDiv = document.createElement("div");
+    rowDiv.className = "row";
+
+    rowDiv.innerHTML = `
+      <h2>${row.title}</h2>
+      <div class="row-posters">
+        ${row.items.map(item => `
+          <div class="poster" style="background-image:url('${item.img}')" 
+               onclick="openVideo('${item.video}')"></div>
+        `).join("")}
+      </div>
+    `;
+
+    content.appendChild(rowDiv);
+  });
+}
+
+function openVideo(src) {
+  document.getElementById("modal").style.display = "flex";
+  document.getElementById("videoPlayer").src = src;
+}
+
+function closeVideo() {
+  document.getElementById("modal").style.display = "none";
+  document.getElementById("videoPlayer").pause();
+}
+
+function playVideo() {
+  openVideo("https://www.w3schools.com/html/mov_bbb.mp4");
+}
+
+document.getElementById("search").addEventListener("input", e => {
+  const value = e.target.value.toLowerCase();
+  content.innerHTML = "";
+
+  movies.forEach(row => {
+    const filteredItems = row.items.filter(item =>
+      item.img.toLowerCase().includes(value)
+    );
+
+    if (filteredItems.length > 0) {
+      const rowDiv = document.createElement("div");
+      rowDiv.className = "row";
+
+      rowDiv.innerHTML = `
+        <h2>${row.title}</h2>
+        <div class="row-posters">
+          ${filteredItems.map(item => `
+            <div class="poster" style="background-image:url('${item.img}')" 
+                 onclick="openVideo('${item.video}')"></div>
+          `).join("")}
+        </div>
+      `;
+
+      content.appendChild(rowDiv);
+    }
+  });
+});
+
+loadRows();
+</script>
+
+</body>
+</html>
